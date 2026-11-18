@@ -1,7 +1,7 @@
 # Referências para a página de vendas e para o desenho do curso
 
 Documento de trabalho. Serve para duas coisas: registrar **de onde veio cada decisão**
-da página `index.html` e listar **o que ainda falta decidir** antes de publicar o curso.
+da página `docs/index.html` e listar **o que ainda falta decidir** antes de publicar o curso.
 
 Atualizado em 17/11/2026. Todos os links abaixo foram testados (HTTP 200) nesta data.
 
@@ -192,13 +192,14 @@ como `[preencher]` na página.
 
 ## 8. Como editar a página
 
-Arquivo único: `landing_page/index.html`. Sem build, sem dependência externa.
+Arquivo único: `docs/index.html`. Sem build, sem dependência externa. É servido pelo
+GitHub Pages a partir do diretório `docs/` no branch `main`.
 
 1. **Campos variáveis:** procure por `class="fill"`. Cada um é um trecho que precisa
    ser preenchido ou removido. Para achar todos:
 
    ```powershell
-   Select-String -Path landing_page/index.html -Pattern 'class="fill"' |
+   Select-String -Path docs/index.html -Pattern 'class="fill"' |
      ForEach-Object { "$($_.LineNumber): $($_.Line.Trim())" }
    ```
 

@@ -53,7 +53,7 @@ bda-dados-rais/
 ├── rag_corpus/                   # corpus local para RAG (dicionários, oficiais, imprensa, acadêmico)
 ├── pesquisa/                     # protocolo, blocos, dados tratados e fichas de defesa
 ├── programacao/                  # uma pasta por bloco: config, SQL e propostas
-└── landing_page/                 # página de vendas do curso e referências
+└── docs/                         # GitHub Pages: landing page do curso + referências
 ```
 
 A camada `.opencode/`, `rag_corpus/` e `pesquisa/` sustenta o estudo descrito em
@@ -62,13 +62,18 @@ O README deste repositório continua sendo a porta de entrada do projeto de RAIS
 protocolo é a porta de entrada da pesquisa comparativa 2010–2026.
 
 `programacao/` guarda o que é executável: cada bloco tem proposta, `config.yaml` e as
-consultas SQL com o dicionário validado no cabeçalho. `landing_page/` é material de
+consultas SQL com o dicionário validado no cabeçalho. `docs/` é material de
 divulgação do curso, separado da pesquisa para não misturar as duas coisas.
 
-O `dicionario_bairros_rais.csv` foi baixado junto com os dados, mas cobre apenas as
-colunas `bairros_fortaleza`, `bairros_rj` e `bairros_sp` da tabela de vínculos. Ou
-seja: ele **não** traz os rótulos de `raca_cor`, `sexo` ou `grau_instrucao_apos_2005`,
-que estão documentados na seção [Dicionário de códigos](#dicionário-de-códigos).
+A landing page está publicada como **prévia** em
+<https://rubensvieirabda.github.io/bda-dados-rais/>. Ela ainda mantém `noindex,
+nofollow` e o banner de rascunho, e os 38 campos variáveis seguem com placeholders
+literais — não é página final nem deve ser divulgada como tal. Os dados que faltam
+estão listados em [`docs/REFERENCIAS.md`](docs/REFERENCIAS.md).
+
+Os rótulos de `raca_cor`, `sexo` e `grau_instrucao_apos_2005` vêm do layout oficial
+da RAIS 2020, registrado em `rag_corpus/dicionarios/` e documentado na seção
+[Dicionário de códigos](#dicionário-de-códigos).
 
 ## Metodologia
 
