@@ -1,0 +1,12 @@
+{
+  "id": "bcb_ipca",
+  "titulo": "BCB SGS 433 - IPCA mensal",
+  "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados?formato=csv",
+  "nivel": "1",
+  "tipo_declarado": "csv",
+  "tipo_detectado": "texto",
+  "content_type": "text/csv; charset=utf-8",
+  "bytes": 11940,
+  "sha256": "f9deedc85aef64ccee630c866d97dbcbce2e556e8474edd1f6db17237cd5e762",
+  "baixado_em": "2026-11-18T00:04:59+00:00"
+}

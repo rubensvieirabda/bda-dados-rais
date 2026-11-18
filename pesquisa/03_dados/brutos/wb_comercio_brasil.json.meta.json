@@ -1,0 +1,12 @@
+{
+  "id": "wb_comercio_brasil",
+  "titulo": "Banco Mundial - Comércio (% do PIB) Brasil",
+  "url": "https://api.worldbank.org/v2/country/BRA/indicator/NE.TRD.GNFS.ZS?format=json&per_page=100",
+  "nivel": "2",
+  "tipo_declarado": "json",
+  "tipo_detectado": "texto",
+  "content_type": "application/json;charset=utf-8",
+  "bytes": 13615,
+  "sha256": "31764b1ba08cd41215a95fd4d63437fa1323752db3c4c4892986c82c7cf7d226",
+  "baixado_em": "2026-11-18T00:05:01+00:00"
+}

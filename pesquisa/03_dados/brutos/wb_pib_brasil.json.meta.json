@@ -1,0 +1,12 @@
+{
+  "id": "wb_pib_brasil",
+  "titulo": "Banco Mundial - Crescimento do PIB Brasil (%)",
+  "url": "https://api.worldbank.org/v2/country/BRA/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=100",
+  "nivel": "2",
+  "tipo_declarado": "json",
+  "tipo_detectado": "texto",
+  "content_type": "application/json;charset=utf-8",
+  "bytes": 14122,
+  "sha256": "b1a6a0dad2c69dc321b4ef2b0ce3ccfecb762db4eeb53d0b55c1aa2d1c933d92",
+  "baixado_em": "2026-11-18T00:05:00+00:00"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "bcb_ibcbr",
+  "titulo": "BCB SGS 24364 - IBC-Br",
+  "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.24364/dados?formato=csv&dataInicial=01/01/2010",
+  "nivel": "1",
+  "tipo_declarado": "csv",
+  "tipo_detectado": "texto",
+  "content_type": "text/csv; charset=utf-8",
+  "bytes": 5126,
+  "sha256": "32c689655ba36f1ea6d419615519dfa373d3f7585a9d8438439849ee6aebf174",
+  "baixado_em": "2026-11-18T00:05:00+00:00"
+}

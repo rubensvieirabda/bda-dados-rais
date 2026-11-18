@@ -1,0 +1,12 @@
+{
+  "id": "bcb_cambio",
+  "titulo": "BCB SGS 3695 - Câmbio comercial venda USD/BRL (média mensal)",
+  "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.3695/dados?formato=csv",
+  "nivel": "1",
+  "tipo_declarado": "csv",
+  "tipo_detectado": "texto",
+  "content_type": "text/csv; charset=utf-8",
+  "bytes": 21059,
+  "sha256": "162600e7aad03817435675168b3beb695a6beaf001e3c3f09198704ad510c28d",
+  "baixado_em": "2026-11-18T00:05:49+00:00"
+}

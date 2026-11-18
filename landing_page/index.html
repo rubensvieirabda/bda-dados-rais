@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dados de Emprego no Brasil — do microdado à defesa em tela</title>
+<meta name="description" content="Curso de análise de dados públicos de emprego no Brasil (2010–2026) com R, Base dos Dados, RAIS, PNAD Contínua e Comex Stat. Método reprodutível e treino de defesa de conclusões.">
+<meta name="robots" content="noindex, nofollow">
+<!-- REMOVER ANTES DE PUBLICAR: noindex acima existe só porque a página é rascunho. -->
+<style>
+  /* ==========================================================================
+     1. Tokens
+     ========================================================================== */
+  :root {
+    --bg:          #f7f4ee;
+    --surface:     #fffdf9;
+    --surface-2:   #f1ece2;
+    --ink:         #121a1c;
+    --ink-soft:    #46534f;
+    --ink-faint:   #6d7873;
+    --line:        #ddd5c6;
+    --line-strong: #c8bfab;
+    --accent:      #0b6b5f;
+    --accent-deep: #084c43;
+    --accent-soft: #e2f0ec;
+    --amber:       #9a5c10;
+    --amber-soft:  #fbefd9;
+    --danger:      #8a2f2f;
+    --radius:      14px;
+    --radius-sm:   9px;
+    --shadow:      0 1px 2px rgba(18,26,28,.05), 0 12px 34px -18px rgba(18,26,28,.35);
+    --max:         1120px;
+    --serif:       "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans:        -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono:        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+
+  /* ==========================================================================
+     2. Base
+     ========================================================================== */
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 84px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--serif);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    margin: 0 0 .5em;
+    text-wrap: balance;
+  }
+
+  h1 { font-size: clamp(2.1rem, 5.2vw, 3.65rem); }
+  h2 { font-size: clamp(1.65rem, 3.4vw, 2.5rem); }
+  h3 { font-size: clamp(1.1rem, 2vw, 1.3rem); }
+  p  { margin: 0 0 1.1em; }
+  p:last-child { margin-bottom: 0; }
+
+  a { color: var(--accent-deep); text-underline-offset: 3px; }
+  a:hover { color: var(--accent); }
+
+  :focus-visible {
+    outline: 3px solid var(--amber);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  .wrap {
+    width: min(100% - 2.5rem, var(--max));
+    margin-inline: auto;
+  }
+
+  .section { padding: clamp(3.5rem, 8vw, 6.5rem) 0; }
+  .section--tight { padding: clamp(2.5rem, 5vw, 4rem) 0; }
+  .section--alt { background: var(--surface-2); border-block: 1px solid var(--line); }
+  .section--dark { background: #0e2124; color: #eef4f2; }
+  .section--dark h2, .section--dark h3 { color: #fff; }
+  .section--dark p, .section--dark li { color: #cdd8d4; }
+  .section--dark a { color: #8fd6c8; }
+
+  .eyebrow {
+    display: inline-block;
+    font: 600 .72rem/1 var(--sans);
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  .section--dark .eyebrow { color: #7fcbbb; }
+
+  .lead {
+    font-size: clamp(1.02rem, 1.7vw, 1.16rem);
+    color: var(--ink-soft);
+    max-width: 62ch;
+  }
+  .section--dark .lead { color: #c3d1cd; }
+
+  .section-head { max-width: 68ch; margin-bottom: clamp(2rem, 4vw, 3rem); }
+
+  /* Campos a preencher: destacados de propósito. Apagar a classe .fill ao publicar. */
+  .fill {
+    background: var(--amber-soft);
+    border-bottom: 1px dashed var(--amber);
+    padding: 0 .25em;
+    border-radius: 3px;
+    color: var(--amber);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .draft-banner {
+    background: #2b1d05;
+    color: #fbe7bd;
+    font-size: .82rem;
+    padding: .6rem 0;
+    text-align: center;
+  }
+  .draft-banner strong { color: #fff; }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 99;
+    background: var(--surface);
+    color: var(--ink);
+    padding: .8rem 1.1rem;
+    border-radius: 0 0 var(--radius-sm) 0;
+    border: 1px solid var(--line-strong);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .skip-link:focus { left: 0; }
+
+  /* ==========================================================================
+     3. Botões
+     ========================================================================== */
+  .btn {
+    --btn-bg: var(--accent);
+    --btn-fg: #fff;
+    display: inline-flex;
+    align-items: center;
+    gap: .55rem;
+    justify-content: center;
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    font: 600 .98rem/1 var(--sans);
+    padding: 1rem 1.6rem;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform .15s ease, background .2s ease, box-shadow .2s ease;
+    box-shadow: 0 8px 20px -12px rgba(8,76,67,.9);
+  }
+  .btn:hover { background: var(--accent-deep); color: #fff; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn--lg { padding: 1.15rem 2rem; font-size: 1.03rem; }
+  .btn--ghost {
+    --btn-bg: transparent;
+    --btn-fg: var(--ink);
+    border-color: var(--line-strong);
+    box-shadow: none;
+  }
+  .btn--ghost:hover { background: #fff; color: var(--ink); border-color: var(--ink-soft); }
+  .btn--light { --btn-bg: #fff; --btn-fg: var(--accent-deep); }
+  .btn--light:hover { --btn-bg: #dff0eb; color: var(--accent-deep); }
+  .btn--block { width: 100%; }
+
+  .btn-note {
+    font-size: .82rem;
+    color: var(--ink-faint);
+    margin-top: .8rem;
+  }
+  .section--dark .btn-note { color: #9fb1ac; }
+
+  /* ==========================================================================
+     4. Navegação
+     ========================================================================== */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(247,244,238,.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    min-height: 68px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    font: 600 1rem/1.1 var(--serif);
+    color: var(--ink);
+    text-decoration: none;
+    letter-spacing: -.01em;
+  }
+  .brand__mark {
+    display: grid;
+    place-items: center;
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: var(--accent);
+    color: #fff;
+    font: 700 .8rem/1 var(--mono);
+    letter-spacing: -.05em;
+  }
+  .nav { display: flex; align-items: center; gap: 1.5rem; }
+  .nav a {
+    font-size: .9rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .nav a:hover { color: var(--ink); }
+  .nav .btn { padding: .7rem 1.15rem; font-size: .88rem; }
+
+  @media (max-width: 900px) {
+    .nav a:not(.btn) { display: none; }
+  }
+
+  /* ==========================================================================
+     5. Hero
+     ========================================================================== */
+  .hero {
+    padding: clamp(2.5rem, 6vw, 5rem) 0 clamp(3rem, 6vw, 5.5rem);
+    background:
+      radial-gradient(1100px 500px at 82% -12%, #e8f3ef 0%, transparent 62%),
+      radial-gradient(700px 420px at 8% 8%, #fbf1de 0%, transparent 55%);
+    border-bottom: 1px solid var(--line);
+  }
+  .hero__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    align-items: center;
+  }
+  .hero__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: #fff;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: .42rem .9rem;
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .03em;
+    color: var(--ink-soft);
+    margin-bottom: 1.4rem;
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+  }
+  .hero h1 { margin-bottom: 1.1rem; }
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(180deg, transparent 62%, #cfe8e1 62%);
+    padding-inline: .08em;
+  }
+  .hero .lead { margin-bottom: 1.6rem; }
+
+  .hero__checks {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem;
+    display: grid;
+    gap: .55rem;
+  }
+  .hero__checks li {
+    display: flex;
+    gap: .65rem;
+    align-items: flex-start;
+    font-size: .95rem;
+    color: var(--ink-soft);
+  }
+  .check {
+    flex: 0 0 auto;
+    width: 19px; height: 19px;
+    margin-top: .2rem;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    display: grid;
+    place-items: center;
+    font-size: .7rem;
+    font-weight: 700;
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .8rem;
+    align-items: center;
+  }
+
+  /* Cartão ilustrativo do hero */
+  .screen {
+    background: #0f1b1e;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    border: 1px solid #1f3237;
+    transform: rotate(-.4deg);
+  }
+  .screen__bar {
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .7rem .9rem;
+    background: #14262a;
+    border-bottom: 1px solid #1f3237;
+  }
+  .screen__bar i {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #35504f;
+    display: block;
+  }
+  .screen__title {
+    margin-left: auto;
+    font: 500 .68rem/1 var(--mono);
+    color: #7f9a96;
+    letter-spacing: .04em;
+  }
+  .screen__body { padding: 1.05rem 1.1rem 1.25rem; }
+  .screen__label {
+    font: 500 .68rem/1.4 var(--mono);
+    color: #6f8d88;
+    margin-bottom: .35rem;
+  }
+  .screen__code {
+    font: 500 .76rem/1.7 var(--mono);
+    color: #cfe3de;
+    margin: 0 0 1rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .screen__code .k { color: #8fd6c8; }
+  .screen__code .s { color: #e6c88a; }
+  .screen__code .c { color: #5f7d78; }
+
+  .mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .72rem;
+    color: #d7e6e2;
+  }
+  .mini-table th {
+    text-align: left;
+    font-weight: 500;
+    color: #7f9a96;
+    padding: .35rem .4rem;
+    border-bottom: 1px solid #23383c;
+    font-family: var(--mono);
+    font-size: .64rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+  .mini-table td {
+    padding: .4rem;
+    border-bottom: 1px solid #1b2d31;
+    font-variant-numeric: tabular-nums;
+  }
+  .mini-table tr:last-child td { border-bottom: 0; }
+  .bar {
+    display: block;
+    height: 7px;
+    border-radius: 99px;
+    background: linear-gradient(90deg, #1d8f7e, #52b7a6);
+  }
+  .screen__foot {
+    margin: .9rem 0 0;
+    font-size: .68rem;
+    color: #6f8d88;
+    font-family: var(--mono);
+    line-height: 1.5;
+  }
+
+  @media (max-width: 940px) {
+    .hero__grid { grid-template-columns: 1fr; }
+    .screen { transform: none; }
+  }
+
+  /* ==========================================================================
+     6. Faixa de fontes
+     ========================================================================== */
+  .strip {
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .strip__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem 1.5rem;
+    padding: 1.1rem 0;
+  }
+  .strip__label {
+    font: 600 .7rem/1 var(--sans);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .strip ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem .75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .strip li {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: .3rem .6rem;
+  }
+
+  /* ==========================================================================
+     7. Cartões e grades
+     ========================================================================== */
+  .grid { display: grid; gap: 1.1rem; }
+  .grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+  @media (max-width: 900px) {
+    .grid--3, .grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 620px) {
+    .grid--2, .grid--3, .grid--4 { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: clamp(1.25rem, 2.4vw, 1.7rem);
+  }
+  .card h3 { margin-bottom: .45rem; }
+  .card p { font-size: .94rem; color: var(--ink-soft); }
+
+  .card__num {
+    display: inline-grid;
+    place-items: center;
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font: 700 .8rem/1 var(--mono);
+    margin-bottom: .8rem;
+  }
+
+  .card--pain .card__num {
+    background: #f7e3e3;
+    color: var(--danger);
+  }
+
+  /* Passos do método */
+  .steps { counter-reset: step; }
+  .step {
+    position: relative;
+    padding-left: 3.4rem;
+  }
+  .step::before {
+    counter-increment: step;
+    content: counter(step, decimal-leading-zero);
+    position: absolute;
+    left: 0; top: .1rem;
+    font: 600 1.6rem/1 var(--serif);
+    color: var(--accent);
+    opacity: .55;
+  }
+  .step h3 { font-size: 1.12rem; margin-bottom: .3rem; }
+  .step p { font-size: .93rem; color: var(--ink-soft); }
+
+  /* Lista de entregáveis */
+  .checklist { list-style: none; padding: 0; margin: 0; display: grid; gap: .7rem; }
+  .checklist li { display: flex; gap: .7rem; align-items: flex-start; font-size: .95rem; }
+  .checklist .check { margin-top: .22rem; }
+
+  /* ==========================================================================
+     8. Módulos (acordeão nativo)
+     ========================================================================== */
+  .modules { display: grid; gap: .75rem; }
+  .module {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .module[open] { border-color: var(--line-strong); box-shadow: var(--shadow); }
+  .module__head {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.1rem 1.3rem;
+    cursor: pointer;
+    list-style: none;
+  }
+  .module__head::-webkit-details-marker { display: none; }
+  .module__head:hover { background: #fbf8f2; }
+  .module__id {
+    flex: 0 0 auto;
+    font: 700 .74rem/1 var(--mono);
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 6px;
+    padding: .42rem .55rem;
+  }
+  .module__title { font-family: var(--serif); font-size: 1.1rem; font-weight: 600; }
+  .module__hint { display: block; font: 400 .8rem/1.3 var(--sans); color: var(--ink-faint); margin-top: .15rem; }
+  .module__sign {
+    margin-left: auto;
+    flex: 0 0 auto;
+    width: 26px; height: 26px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid var(--line-strong);
+    color: var(--ink-soft);
+    font-size: 1rem;
+    line-height: 1;
+    transition: transform .2s ease;
+  }
+  .module[open] .module__sign { transform: rotate(45deg); }
+  .module__body {
+    padding: 0 1.3rem 1.35rem 4.5rem;
+    border-top: 1px solid var(--line);
+    padding-top: 1.1rem;
+  }
+  .module__body p { font-size: .94rem; color: var(--ink-soft); }
+  .module__body ul { margin: .7rem 0 0; padding-left: 1.1rem; }
+  .module__body li { font-size: .92rem; color: var(--ink-soft); margin-bottom: .35rem; }
+  .deliverable {
+    display: inline-block;
+    margin-top: .9rem;
+    font-size: .82rem;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    border-radius: 6px;
+    padding: .35rem .6rem;
+    font-weight: 600;
+  }
+  @media (max-width: 620px) {
+    .module__body { padding-left: 1.3rem; }
+  }
+
+  /* ==========================================================================
+     9. Para quem / não é para quem
+     ========================================================================== */
+  .fit { display: grid; gap: 1.1rem; grid-template-columns: 1fr 1fr; }
+  @media (max-width: 760px) { .fit { grid-template-columns: 1fr; } }
+  .fit__col {
+    border-radius: var(--radius);
+    padding: clamp(1.3rem, 2.6vw, 1.8rem);
+    border: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .fit__col--yes { border-top: 4px solid var(--accent); }
+  .fit__col--no  { border-top: 4px solid var(--line-strong); background: #f4efe5; }
+  .fit__col h3 { display: flex; gap: .5rem; align-items: center; }
+  .fit__col ul { margin: .8rem 0 0; padding-left: 1.05rem; }
+  .fit__col li { margin-bottom: .55rem; font-size: .94rem; color: var(--ink-soft); }
+  .fit__col--no li { color: var(--ink-faint); }
+
+  /* ==========================================================================
+     10. Instrutor
+     ========================================================================== */
+  .person {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: clamp(1.2rem, 3vw, 2rem);
+    align-items: start;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: clamp(1.4rem, 3vw, 2.2rem);
+  }
+  .person__photo {
+    width: 118px; height: 118px;
+    border-radius: 14px;
+    background: var(--surface-2);
+    border: 1px dashed var(--line-strong);
+    display: grid;
+    place-items: center;
+    text-align: center;
+    font-size: .72rem;
+    color: var(--ink-faint);
+    padding: .5rem;
+    line-height: 1.35;
+  }
+  @media (max-width: 560px) {
+    .person { grid-template-columns: 1fr; }
+    .person__photo { width: 92px; height: 92px; }
+  }
+  .person h3 { margin-bottom: .15rem; }
+  .person__role { font-size: .88rem; color: var(--accent); font-weight: 600; margin-bottom: .8rem; }
+  .person p { font-size: .94rem; color: var(--ink-soft); }
+  .person__links { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+  .chip {
+    font-size: .78rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: .32rem .7rem;
+    color: var(--ink-soft);
+    text-decoration: none;
+    background: #fff;
+  }
+
+  /* ==========================================================================
+     11. Oferta
+     ========================================================================== */
+  .offer {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: start;
+  }
+  @media (max-width: 900px) { .offer { grid-template-columns: 1fr; } }
+
+  .offer__box {
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    padding: clamp(1.5rem, 3.2vw, 2.2rem);
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  .offer__tag {
+    position: absolute;
+    top: -13px; left: 1.6rem;
+    background: var(--amber);
+    color: #fff;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .35rem .7rem;
+    border-radius: 5px;
+  }
+  .price {
+    display: flex;
+    align-items: baseline;
+    gap: .4rem;
+    margin: 1.2rem 0 .2rem;
+  }
+  .price__value {
+    font: 600 clamp(2.2rem, 5vw, 2.9rem)/1 var(--serif);
+    letter-spacing: -.02em;
+  }
+  .price__old {
+    font-size: .95rem;
+    color: var(--ink-faint);
+    text-decoration: line-through;
+  }
+  .price__note { font-size: .84rem; color: var(--ink-soft); margin-bottom: 1.3rem; }
+
+  .includes { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: .6rem; }
+  .includes li {
+    display: flex;
+    gap: .65rem;
+    align-items: flex-start;
+    font-size: .93rem;
+    color: var(--ink-soft);
+  }
+  .includes .check { flex: 0 0 auto; }
+
+  .fineprint {
+    margin-top: 1.1rem;
+    font-size: .78rem;
+    color: var(--ink-faint);
+    line-height: 1.6;
+  }
+
+  /* ==========================================================================
+     12. FAQ
+     ========================================================================== */
+  .faq { display: grid; gap: .6rem; max-width: 800px; }
+  .faq details {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: .95rem 1.15rem;
+  }
+  .faq summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: .97rem;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: center;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after {
+    content: "+";
+    font-size: 1.2rem;
+    color: var(--accent);
+    line-height: 1;
+    flex: 0 0 auto;
+  }
+  .faq details[open] summary::after { content: "–"; }
+  .faq details p { margin-top: .8rem; font-size: .93rem; color: var(--ink-soft); }
+
+  /* ==========================================================================
+     13. CTA final e rodapé
+     ========================================================================== */
+  .final {
+    text-align: center;
+    padding: clamp(3.5rem, 7vw, 6rem) 0;
+  }
+  .final h2 { max-width: 22ch; margin-inline: auto; }
+  .final .lead { margin-inline: auto; }
+  .final .hero__actions { justify-content: center; margin-top: 1.8rem; }
+
+  .footer {
+    border-top: 1px solid var(--line);
+    padding: 2.2rem 0 3rem;
+    background: var(--surface);
+    font-size: .82rem;
+    color: var(--ink-faint);
+  }
+  .footer__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 2rem;
+  }
+  @media (max-width: 760px) { .footer__grid { grid-template-columns: 1fr; } }
+  .footer h4 {
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--ink-soft);
+    margin: 0 0 .7rem;
+  }
+  .footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: .35rem; }
+  .footer a { color: var(--ink-soft); text-decoration: none; }
+  .footer a:hover { color: var(--accent); text-decoration: underline; }
+  .footer__bottom {
+    margin-top: 2rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem 1.5rem;
+    justify-content: space-between;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+
+  @media print {
+    .topbar, .draft-banner, .hero__actions, .final .btn { display: none; }
+    body { background: #fff; }
+    .section { padding: 1.2rem 0; }
+    .module__body { display: block; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==========================================================
+     AVISO DE RASCUNHO — apagar este bloco ao publicar.
+     ========================================================== -->
+<div class="draft-banner">
+  <strong>Rascunho.</strong> Os campos em amarelo precisam ser preenchidos antes de publicar.
+  Não use depoimento, número de aluno ou resultado que você não possa comprovar.
+</div>
+
+<a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+
+<!-- ==========================================================
+     NAV
+     ========================================================== -->
+<header class="topbar">
+  <div class="wrap topbar__inner">
+    <a class="brand" href="#topo">
+      <span class="brand__mark" aria-hidden="true">%</span>
+      <span>Dados de Emprego<br><small style="font:500 .72rem/1 var(--sans);letter-spacing:.08em;color:var(--ink-faint);text-transform:uppercase">Brasil · 2010–2026</small></span>
+    </a>
+    <nav class="nav" aria-label="Navegação principal">
+      <a href="#metodo">Método</a>
+      <a href="#modulos">Módulos</a>
+      <a href="#para-quem">Para quem é</a>
+      <a href="#faq">Dúvidas</a>
+      <a class="btn" href="#oferta">Ver a oferta</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ==========================================================
+     HERO
+     ========================================================== -->
+<section class="hero" id="topo">
+  <div class="wrap hero__grid">
+    <div>
+      <span class="hero__badge"><span class="dot" aria-hidden="true"></span>
+        Curso online · turma <span class="fill">[data]</span>
+      </span>
+
+      <h1>Você sabe achar o dado.<br>Falta <em>sustentar a conclusão</em>.</h1>
+
+      <p class="lead">
+        Um curso para transformar microdados públicos brasileiros em análise
+        reprodutível — e em resposta que aguenta pergunta difícil. Do download da
+        RAIS à ficha de defesa que você leva para a banca, a reunião ou o relatório.
+      </p>
+
+      <ul class="hero__checks">
+        <li><span class="check" aria-hidden="true">✓</span> 2010 a 2026: séries de emprego, território, comércio e choques globais</li>
+        <li><span class="check" aria-hidden="true">✓</span> R, Base dos Dados, RAIS, PNAD Contínua, CAGED e Comex Stat</li>
+        <li><span class="check" aria-hidden="true">✓</span> Cada número com fonte, ano-base, unidade e limitação declarada</li>
+      </ul>
+
+      <div class="hero__actions">
+        <a class="btn btn--lg" href="#oferta">Quero entrar na turma</a>
+        <a class="btn btn--ghost btn--lg" href="#modulos">Ver o conteúdo</a>
+      </div>
+      <p class="btn-note">Garantia de 7 dias · acesso por <span class="fill">[período]</span></p>
+    </div>
+
+    <!-- Cartão ilustrativo: é um diagrama de saída, não um resultado do curso. -->
+    <div class="screen" aria-hidden="true">
+      <div class="screen__bar">
+        <i></i><i></i><i></i>
+        <span class="screen__title">painel_cidades.csv</span>
+      </div>
+      <div class="screen__body">
+        <div class="screen__label">-- 03_rais_municipal.sql</div>
+        <pre class="screen__code"><span class="c">-- estoque de vínculos + VAB</span>
+<span class="k">SELECT</span> ano, id_municipio,
+       <span class="k">COUNT</span>(*) <span class="k">AS</span> vinculos
+<span class="k">FROM</span> rais.microdados_vinculos
+<span class="k">WHERE</span> vinculo_ativo_3112 = <span class="s">'1'</span>
+  <span class="k">AND</span> COALESCE(abandonado,<span class="s">'0'</span>) != <span class="s">'1'</span></pre>
+
+        <table class="mini-table">
+          <thead>
+            <tr><th>município</th><th>vínculos</th><th>VAB/vínculo</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>São Paulo</td><td>5,9 M</td><td><span class="bar" style="width:100%"></span></td></tr>
+            <tr><td>Rio de Janeiro</td><td>2,4 M</td><td><span class="bar" style="width:61%"></span></td></tr>
+            <tr><td>Belo Horizonte</td><td>1,3 M</td><td><span class="bar" style="width:44%"></span></td></tr>
+            <tr><td>Curitiba</td><td>0,9 M</td><td><span class="bar" style="width:37%"></span></td></tr>
+          </tbody>
+        </table>
+        <p class="screen__foot">exemplo ilustrativo de saída · valores fictícios</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     FAIXA DE FONTES
+     ========================================================== -->
+<div class="strip">
+  <div class="wrap strip__inner">
+    <span class="strip__label">Fontes trabalhadas no curso</span>
+    <ul>
+      <li>RAIS · MTE</li>
+      <li>PNAD Contínua · IBGE</li>
+      <li>Novo CAGED</li>
+      <li>PIB dos Municípios</li>
+      <li>Comex Stat · MDIC</li>
+      <li>Base dos Dados</li>
+      <li>BCB · IPCA</li>
+    </ul>
+  </div>
+</div>
+
+<main id="conteudo">
+
+<!-- ==========================================================
+     DOR
+     ========================================================== -->
+<section class="section" id="problema">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">O problema</span>
+      <h2>Não é falta de dado. É falta de método para defendê-lo.</h2>
+      <p class="lead">
+        Dado público brasileiro é abundante e gratuito. O que trava a análise é o
+        passo seguinte: saber se duas séries podem ser comparadas, se o número
+        resiste a uma pergunta e se a conclusão sobrevive sem você por perto para
+        explicá-la.
+      </p>
+    </div>
+
+    <div class="grid grid--3">
+      <article class="card card--pain">
+        <span class="card__num" aria-hidden="true">01</span>
+        <h3>Você compara o que não é comparável</h3>
+        <p>
+          PNAD antiga com PNAD Contínua, CAGED com Novo CAGED, RAIS de anos
+          diferentes. A série muda de natureza e o gráfico continua bonito — e errado.
+        </p>
+      </article>
+      <article class="card card--pain">
+        <span class="card__num" aria-hidden="true">02</span>
+        <h3>Você chega ao número, mas não à explicação</h3>
+        <p>
+          Caiu o emprego industrial em 2015. Foi crise doméstica, choque externo ou
+          as duas coisas? Sem teste de causalidade, a resposta vira opinião.
+        </p>
+      </article>
+      <article class="card card--pain">
+        <span class="card__num" aria-hidden="true">03</span>
+        <h3>Você entrega gráfico, não conclusão</h3>
+        <p>
+          A apresentação passa, mas a primeira pergunta derruba: "qual é a fonte?",
+          "isso é nominal ou real?", "por que 2019 e não 2016?".
+        </p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     MÉTODO
+     ========================================================== -->
+<section class="section section--alt" id="metodo">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">O método</span>
+      <h2>Quatro etapas. Nenhuma delas é "plotar o gráfico".</h2>
+      <p class="lead">
+        É o mesmo pipeline que organiza este projeto: fonte declarada, tratamento
+        auditável, indicador com numerador e denominador explícitos e uma ficha de
+        defesa por afirmação crítica.
+      </p>
+    </div>
+
+    <div class="grid grid--4 steps">
+      <article class="step">
+        <h3>Fonte</h3>
+        <p>O que a série mede, o que ela não mede, qual é a cobertura e qual é a defasagem. Dicionário validado antes de qualquer consulta.</p>
+      </article>
+      <article class="step">
+        <h3>Tratamento</h3>
+        <p>Chave pelo código IBGE, nunca pelo nome. Sem interpolar ano ausente. Nominal e real em colunas separadas, com o deflator nomeado.</p>
+      </article>
+      <article class="step">
+        <h3>Análise</h3>
+        <p>Índice, participação, produtividade, concentração. Cada indicador com fórmula, unidade e a ressalva que ele carrega.</p>
+      </article>
+      <article class="step">
+        <h3>Defesa</h3>
+        <p>Pergunta crítica, resposta em quatro linhas, evidência, limitação assumida e contra-argumento. Testado em voz alta antes da tela.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     O QUE VOCÊ VAI APRENDER
+     ========================================================== -->
+<section class="section" id="aprender">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Ao final</span>
+      <h2>O que você será capaz de fazer</h2>
+    </div>
+
+    <div class="grid grid--2">
+      <div>
+        <ul class="checklist">
+          <li><span class="check" aria-hidden="true">✓</span> Baixar e cruzar RAIS, PNAD Contínua, CAGED e Comex Stat sem quebrar a série</li>
+          <li><span class="check" aria-hidden="true">✓</span> Construir um painel municipal reprodutível, com código IBGE como chave</li>
+          <li><span class="check" aria-hidden="true">✓</span> Calcular PIB per capita, participação setorial e VAB por vínculo formal</li>
+          <li><span class="check" aria-hidden="true">✓</span> Medir concentração territorial com top-N e HHI, declarando o critério</li>
+        </ul>
+      </div>
+      <div>
+        <ul class="checklist">
+          <li><span class="check" aria-hidden="true">✓</span> Separar choque externo de causa doméstica com um teste de causalidade explícito</li>
+          <li><span class="check" aria-hidden="true">✓</span> Deflacionar rendimento corretamente e dizer qual índice, base e período</li>
+          <li><span class="check" aria-hidden="true">✓</span> Escrever a limitação antes da conclusão — e não depois que alguém pergunta</li>
+          <li><span class="check" aria-hidden="true">✓</span> Montar a ficha de defesa de cada afirmação que você vai sustentar em tela</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     MÓDULOS
+     ========================================================== -->
+<section class="section section--alt" id="modulos">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Conteúdo</span>
+      <h2>Cinco blocos, na ordem em que a análise precisa acontecer</h2>
+      <p class="lead">
+        A sequência não é temática, é de dependência: sem a série nacional você não
+        interpreta o território; sem o território, o comércio não tem onde acontecer.
+      </p>
+    </div>
+
+    <div class="modules">
+
+      <details class="module" open>
+        <summary class="module__head">
+          <span class="module__id">01</span>
+          <span>
+            <span class="module__title">Séries de emprego: o que é comparável</span>
+            <span class="module__hint">PNAD Contínua · CAGED · RAIS · deflatores</span>
+          </span>
+          <span class="module__sign" aria-hidden="true">+</span>
+        </summary>
+        <div class="module__body">
+          <p>O bloco que evita o erro mais comum: emendar séries que mudaram de método.</p>
+          <ul>
+            <li>O que cada fonte mede: vínculo, pessoa ocupada, fluxo e estoque</li>
+            <li>As quebras: PNAD → PNAD Contínua (2012), CAGED → Novo CAGED (2020)</li>
+            <li>IPCA, INPC e deflator implícito do PIB: quando cada um é o certo</li>
+            <li>2026 como ano parcial: como marcar no gráfico sem enganar a leitura</li>
+          </ul>
+          <span class="deliverable">Entregável: série nacional consolidada com nota de quebra</span>
+        </div>
+      </details>
+
+      <details class="module">
+        <summary class="module__head">
+          <span class="module__id">02</span>
+          <span>
+            <span class="module__title">Território: onde o emprego está e quanto ele produz</span>
+            <span class="module__hint">PIB municipal · RAIS por município · concentração</span>
+          </span>
+          <span class="module__sign" aria-hidden="true">+</span>
+        </summary>
+        <div class="module__body">
+          <p>O bloco que transforma "as maiores cidades" em um recorte com critério declarado.</p>
+          <ul>
+            <li>Ranking por população, PIB ou vínculos: três respostas diferentes</li>
+            <li>PIB per capita e composição do VAB — e por que 2022–2023 não têm abertura setorial</li>
+            <li>VAB por vínculo formal: o indicador que não se chama "produtividade do trabalho"</li>
+            <li>Concentração com top-N e HHI; município versus região metropolitana</li>
+            <li>Comex por município e a armadilha da sede da trading</li>
+          </ul>
+          <span class="deliverable">Entregável: painel municipal + tabela de ranking pronta para tela</span>
+        </div>
+      </details>
+
+      <details class="module">
+        <summary class="module__head">
+          <span class="module__id">03</span>
+          <span>
+            <span class="module__title">Forças comerciais: quem puxa a economia local</span>
+            <span class="module__hint">Comex Stat · pauta · parceiros · complexidade</span>
+          </span>
+          <span class="module__sign" aria-hidden="true">+</span>
+        </summary>
+        <div class="module__body">
+          <p>Comércio exterior entra como explicação do território, não como catálogo de produtos.</p>
+          <ul>
+            <li>Exportação e importação por município, produto (SH4) e parceiro</li>
+            <li>Saldo comercial, corrente de comércio e peso: três leituras distintas</li>
+            <li>Cadeias produtivas locais e dependência de um único parceiro</li>
+            <li>Por que município portuário não é município produtor</li>
+          </ul>
+          <span class="deliverable">Entregável: mapa de dependência comercial das cidades do painel</span>
+        </div>
+      </details>
+
+      <details class="module">
+        <summary class="module__head">
+          <span class="module__id">04</span>
+          <span>
+            <span class="module__title">Choques globais e catástrofes: o que realmente move o emprego</span>
+            <span class="module__hint">Matriz de eventos · teste de causalidade</span>
+          </span>
+          <span class="module__sign" aria-hidden="true">+</span>
+        </summary>
+        <div class="module__body">
+          <p>O bloco mais difícil de defender — e o que mais separa análise de opinião.</p>
+          <ul>
+            <li>Matriz de eventos: data, escopo, canal de transmissão esperado</li>
+            <li>Recessão de 2014–2016 como confundidor doméstico central</li>
+            <li>COVID-19: choque sanitário, de oferta e de demanda ao mesmo tempo</li>
+            <li>Tarifas, energia e fertilizantes: quando o efeito é indireto</li>
+            <li>Enchentes no Rio Grande do Sul: catástrofe comprovada, efeito regional</li>
+            <li>O teste: o indicador reagiu? com que defasagem? o que serviria de contraprova?</li>
+          </ul>
+          <span class="deliverable">Entregável: matriz de eventos classificada como direta, indireta ou não comprovada</span>
+        </div>
+      </details>
+
+      <details class="module">
+        <summary class="module__head">
+          <span class="module__id">05</span>
+          <span>
+            <span class="module__title">Síntese e defesa em tela</span>
+            <span class="module__hint">Narrativa · ficha de defesa · perguntas de banca</span>
+          </span>
+          <span class="module__sign" aria-hidden="true">+</span>
+        </summary>
+        <div class="module__body">
+          <p>A análise só existe quando sobrevive à pergunta de quem não confia em você.</p>
+          <ul>
+            <li>Como montar a narrativa em três atos sem esconder a limitação</li>
+            <li>Ficha de defesa: afirmação, pergunta crítica, resposta, evidência, contra-argumento</li>
+            <li>Auditoria do texto: toda afirmação com número precisa de fonte e período</li>
+            <li>Simulação de banca com as perguntas que mais derrubam</li>
+          </ul>
+          <span class="deliverable">Entregável: apresentação final + fichas de defesa revisadas</span>
+        </div>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     PROJETO FINAL
+     ========================================================== -->
+<section class="section section--dark" id="projeto">
+  <div class="wrap">
+    <div class="grid grid--2" style="align-items:center;gap:clamp(2rem,5vw,4rem)">
+      <div>
+        <span class="eyebrow">Projeto final</span>
+        <h2>Você não termina com certificado. Termina com um acervo.</h2>
+        <p class="lead">
+          O projeto final é o mesmo formato deste repositório: código que roda de novo,
+          dado com fonte declarada e texto que aguenta auditoria.
+        </p>
+      </div>
+      <ul class="checklist">
+        <li><span class="check" aria-hidden="true">✓</span> <span><strong style="color:#fff">Pipeline reprodutível</strong> — SQL, scripts e config versionados</span></li>
+        <li><span class="check" aria-hidden="true">✓</span> <span><strong style="color:#fff">Painel municipal</strong> — 20 cidades, ano-base e fonte por coluna</span></li>
+        <li><span class="check" aria-hidden="true">✓</span> <span><strong style="color:#fff">Matriz de eventos</strong> — choques classificados por canal e evidência</span></li>
+        <li><span class="check" aria-hidden="true">✓</span> <span><strong style="color:#fff">Fichas de defesa</strong> — uma por afirmação crítica da sua apresentação</span></li>
+        <li><span class="check" aria-hidden="true">✓</span> <span><strong style="color:#fff">Metadados</strong> — hash, data de extração e revisão da fonte</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     PARA QUEM É / NÃO É
+     ========================================================== -->
+<section class="section" id="para-quem">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Adequação</span>
+      <h2>Para quem este curso foi desenhado</h2>
+    </div>
+
+    <div class="fit">
+      <div class="fit__col fit__col--yes">
+        <h3><span class="check" aria-hidden="true">✓</span> É para você se…</h3>
+        <ul>
+          <li>trabalha ou pesquisa com políticas públicas, emprego, desenvolvimento regional ou economia</li>
+          <li>já usa R ou Python no nível intermediário e quer parar de refazer a mesma limpeza de dados</li>
+          <li>precisa apresentar resultado para gestor, banca, cliente ou jornalista e ser cobrado pela fonte</li>
+          <li>quer aprender o caminho completo — da consulta ao Base dos Dados até a resposta em tela</li>
+          <li>prefere entender a limitação do indicador a escondê-la atrás de um gráfico bonito</li>
+        </ul>
+      </div>
+      <div class="fit__col fit__col--no">
+        <h3>Não é para você se…</h3>
+        <ul>
+          <li>procura receita pronta de dashboard, sem entender o que está sendo medido</li>
+          <li>nunca escreveu uma linha de código e quer começar por machine learning</li>
+          <li>quer só um certificado, sem produzir análise própria</li>
+          <li>espera que o curso entregue a conclusão sobre o mercado de trabalho no lugar de você</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     INSTRUTOR
+     ========================================================== -->
+<section class="section section--alt" id="instrutor">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Quem conduz</span>
+      <h2>Quem vai estar do outro lado</h2>
+    </div>
+
+    <div class="person">
+      <div class="person__photo">[sua foto<br>quadrada<br>400 × 400 px]</div>
+      <div>
+        <h3><span class="fill">[seu nome]</span></h3>
+        <p class="person__role"><span class="fill">[cargo ou especialidade]</span> · <span class="fill">[instituição ou atuação]</span></p>
+        <p>
+          <span class="fill">[bio em 3 a 4 linhas]</span> — escreva aqui a trajetória que
+          dá autoridade para ensinar este conteúdo: formação, tempo de trabalho com
+          microdados brasileiros, projetos ou publicações. Evite adjetivos; use fatos
+          verificáveis.
+        </p>
+        <p>
+          <span class="fill">[por que você criou este curso]</span> — uma ou duas frases
+          sobre o problema que você viu se repetir e que este curso resolve.
+        </p>
+        <div class="person__links">
+          <a class="chip" href="#"><span class="fill">[LinkedIn]</span></a>
+          <a class="chip" href="#"><span class="fill">[GitHub]</span></a>
+          <a class="chip" href="#"><span class="fill">[Lattes ou site]</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     OFERTA
+     ========================================================== -->
+<section class="section" id="oferta">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">A oferta</span>
+      <h2>O que está incluso</h2>
+      <p class="lead">
+        Curso gravado, encontros ao vivo para dúvida e defesa, e todo o material de
+        apoio reutilizável — inclusive depois que a turma acabar.
+      </p>
+    </div>
+
+    <div class="offer">
+      <div>
+        <ul class="includes">
+          <li><span class="check" aria-hidden="true">✓</span> <span><strong><span class="fill">[n]</span> módulos</strong> em vídeo, com <span class="fill">[n]</span> horas de conteúdo</span></li>
+          <li><span class="check" aria-hidden="true">✓</span> <span><strong>Repositório do curso</strong>: SQL, scripts em R e Python, `config.yaml` e dicionários validados</span></li>
+          <li><span class="check" aria-hidden="true">✓</span> <span><strong>Encontros ao vivo</strong> de dúvida e simulação de banca (<span class="fill">[n]</span> encontros)</span></li>
+          <li><span class="check" aria-hidden="true">✓</span> <span><strong>Modelos prontos</strong>: ficha de defesa, ficha de variável, matriz de eventos e tabela de cidades</span></li>
+          <li><span class="check" aria-hidden="true">✓</span> <span><strong>Checklist de auditoria</strong> para rodar no seu texto antes de apresentar</span></li>
+          <li><span class="check" aria-hidden="true">✓</span> <span><strong>Corpus de fontes</strong> com os documentos oficiais usados nas aulas</span></li>
+          <li><span class="check" aria-hidden="true">✓</span> <span><strong>Acesso por <span class="fill">[período]</span></strong>, com atualizações da turma incluídas</span></li>
+          <li><span class="check" aria-hidden="true">✓</span> <span><strong>Certificado</strong> de conclusão <span class="fill">[se houver]</span></span></li>
+        </ul>
+
+        <div class="card" style="background:#fbf8f2">
+          <h3 style="font-size:1rem">Bônus <span class="fill">[opcional — apague se não houver]</span></h3>
+          <p style="margin-bottom:0">
+            <span class="fill">[descreva um bônus real: aula extra, planilha, mentoria em grupo,
+            biblioteca de consultas]</span>. Bônus inventado é o caminho mais rápido para
+            uma reclamação pública.
+          </p>
+        </div>
+      </div>
+
+      <aside class="offer__box">
+        <span class="offer__tag">Turma <span class="fill">[n]</span></span>
+        <h3 style="margin-bottom:.2rem">Acesso completo</h3>
+        <p style="font-size:.9rem;color:var(--ink-soft);margin-bottom:0">
+          Curso + repositório + encontros ao vivo
+        </p>
+
+        <div class="price">
+          <span class="price__old">R$ <span class="fill">[valor cheio]</span></span>
+        </div>
+        <div class="price">
+          <span class="price__value">R$ <span class="fill">[valor]</span></span>
+        </div>
+        <p class="price__note">
+          ou <span class="fill">[n]</span>× de R$ <span class="fill">[parcela]</span> ·
+          pagamento por <span class="fill">[plataforma]</span>
+        </p>
+
+        <a class="btn btn--block btn--lg" href="#"><span class="fill" style="background:transparent;border:0;color:inherit">[link de inscrição]</span></a>
+
+        <p class="fineprint">
+          Inscrições até <span class="fill">[data]</span>. Vagas limitadas a
+          <span class="fill">[n]</span> por causa da correção individual.
+          Preço e condições precisam estar iguais aos da plataforma de pagamento.
+        </p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     GARANTIA
+     ========================================================== -->
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="card" style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:1.2rem;align-items:center;border-left:4px solid var(--accent)">
+      <span style="font:600 2rem/1 var(--serif);color:var(--accent)">7</span>
+      <div>
+        <h3 style="margin-bottom:.2rem">dias de garantia incondicional</h3>
+        <p style="font-size:.93rem;margin-bottom:0">
+          Entre, assista às primeiras aulas e baixe o material. Se não for para você,
+          peça o reembolso dentro de 7 dias e receba o valor integral, sem justificativa.
+          O prazo e a forma seguem as regras do Código de Defesa do Consumidor.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     FAQ
+     ========================================================== -->
+<section class="section section--alt" id="faq">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Dúvidas</span>
+      <h2>Perguntas que sempre aparecem</h2>
+    </div>
+
+    <div class="faq">
+      <details>
+        <summary>Preciso saber R ou Python antes?</summary>
+        <p>
+          Sim, o nível intermediário é pré-requisito: ler e escrever código, manipular
+          data frame e rodar um script. O curso não ensina programação do zero — ensina
+          a usá-la em dados públicos com rigor. <span class="fill">[confirmar requisito e indicar material de nivelamento, se houver]</span>
+        </p>
+      </details>
+
+      <details>
+        <summary>As aulas são ao vivo ou gravadas?</summary>
+        <p>
+          O conteúdo principal é gravado, para você assistir no seu ritmo. Os encontros
+          ao vivo são para dúvida e simulação de defesa, e ficam gravados para quem não
+          puder comparecer. <span class="fill">[ajustar conforme o formato real]</span>
+        </p>
+      </details>
+
+      <details>
+        <summary>Preciso pagar por Base dos Dados ou BigQuery?</summary>
+        <p>
+          Não. Os dados usados são públicos e acessados pelo nível gratuito da Base dos
+          Dados no BigQuery. Uma varredura de 14 anos da RAIS é grande, então o curso
+          ensina a rodar ano a ano para caber na cota. Se você tiver cota paga, ótimo —
+          mas não é requisito.
+        </p>
+      </details>
+
+      <details>
+        <summary>Serve para quem trabalha com políticas públicas e não com economia?</summary>
+        <p>
+          Serve. O recorte é emprego e território, mas o método — fonte, tratamento,
+          indicador, defesa — é o mesmo para saúde, educação ou segurança pública. O
+          que muda é a série, não a lógica.
+        </p>
+      </details>
+
+      <details>
+        <summary>Por quanto tempo tenho acesso?</summary>
+        <p>
+          <span class="fill">[período de acesso]</span>, contando da liberação da turma.
+          As atualizações e correções do material ficam disponíveis nesse mesmo período.
+        </p>
+      </details>
+
+      <details>
+        <summary>Como funciona o certificado?</summary>
+        <p>
+          <span class="fill">[descreva: carga horária, critério de conclusão, emissão]</span>.
+          Se não houver certificado, apague esta pergunta — prometer e não entregar é
+          pior do que não oferecer.
+        </p>
+      </details>
+
+      <details>
+        <summary>E se eu não tiver tempo durante a turma?</summary>
+        <p>
+          O material é assíncrono e o acesso continua depois do fim dos encontros.
+          Ainda assim, os encontros ao vivo têm data — e é neles que a parte de defesa
+          funciona melhor. <span class="fill">[ajustar conforme a política real]</span>
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ==========================================================
+     CTA FINAL
+     ========================================================== -->
+<section class="final" id="inscricao">
+  <div class="wrap">
+    <span class="eyebrow">Última chamada</span>
+    <h2>Da próxima vez que perguntarem "qual é a fonte?", você vai ter a resposta.</h2>
+    <p class="lead">
+      Turma <span class="fill">[n]</span>, inscrições até <span class="fill">[data]</span>.
+      Garantia de 7 dias.
+    </p>
+    <div class="hero__actions">
+      <a class="btn btn--lg" href="#"><span class="fill" style="background:transparent;border:0;color:inherit">[link de inscrição]</span></a>
+      <a class="btn btn--ghost btn--lg" href="#modulos">Rever os módulos</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ==========================================================
+     RODAPÉ
+     ========================================================== -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <a class="brand" href="#topo" style="margin-bottom:.8rem">
+          <span class="brand__mark" aria-hidden="true">%</span>
+          <span>Dados de Emprego · Brasil</span>
+        </a>
+        <p style="max-width:38ch">
+          Análise de dados públicos de emprego, território e comércio exterior,
+          de 2010 a 2026. Método reprodutível e defesa de conclusão.
+        </p>
+      </div>
+      <div>
+        <h4>Navegar</h4>
+        <ul>
+          <li><a href="#metodo">Método</a></li>
+          <li><a href="#modulos">Módulos</a></li>
+          <li><a href="#para-quem">Para quem é</a></li>
+          <li><a href="#oferta">Oferta</a></li>
+          <li><a href="#faq">Dúvidas</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Contato</h4>
+        <ul>
+          <li><a href="#"><span class="fill">[e-mail]</span></a></li>
+          <li><a href="#"><span class="fill">[Instagram]</span></a></li>
+          <li><a href="#"><span class="fill">[LinkedIn]</span></a></li>
+          <li><a href="#"><span class="fill">[termos de uso]</span></a></li>
+          <li><a href="#"><span class="fill">[política de privacidade]</span></a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <span>© 2026 <span class="fill">[nome ou empresa]</span>. Todos os direitos reservados.</span>
+      <span>
+        Fontes citadas pertencem aos órgãos produtores (MTE, IBGE, MDIC, BCB).
+        Código sob MIT e conteúdo sob CC BY 4.0 no repositório do curso.
+      </span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

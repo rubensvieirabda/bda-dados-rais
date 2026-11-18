@@ -1,0 +1,223 @@
+# =============================================================================
+# config.yaml — parâmetros da sprint `programacao/bloco_2` (Bloco 2 da pesquisa)
+# =============================================================================
+# Este arquivo é a ÚNICA fonte de verdade para recorte, critério de seleção e
+# deflator. Nenhum script deve repetir esses valores no código.
+#
+# Trocar critério, número de cidades ou deflator = editar aqui e rodar de novo.
+#
+# Dicionário de tabelas e colunas validado em `dicionario_validado.csv`.
+# Schemas conferidos em 17/11/2026 contra o repositório público
+# https://github.com/basedosdados/pipelines (models/).
+# =============================================================================
+
+versao: "0.1"
+atualizado_em: "2026-11-17"
+responsavel: rubensvieirabda
+bloco_pesquisa: 2
+tema: "território, produtividade e investimento"
+
+# -----------------------------------------------------------------------------
+# 1. Recorte temporal
+# -----------------------------------------------------------------------------
+recorte:
+  ano_inicio: 2010
+  ano_fim: 2026
+  # 2026 é ano parcial: não há RAIS consolidada e o CAGED só cobre os meses
+  # publicados até a extração. Todo gráfico com 2026 precisa de marcação visual.
+  ano_parcial: 2026
+  incluir_ano_parcial: true   # D3 — default: incluir marcado como parcial
+
+# -----------------------------------------------------------------------------
+# 2. Seleção das cidades (D1, D2 e D5 — decididas em 17/11/2026)
+# -----------------------------------------------------------------------------
+selecao:
+  # D1: PIB e população NÃO são uma escolha única. Os três critérios convivem:
+  # cada um gera seu ranking e há ainda uma versão combinada. O critério pode
+  # mudar entre etapas do estudo sem reescrever o pipeline.
+  criterios:
+    - pib           # br_ibge_pib.municipio — atividade econômica
+    - populacao     # br_ibge_populacao.municipio — porte da população
+    - vinculos      # br_me_rais.microdados_vinculos — estoque formal em 31/12
+  # Ranking principal: média dos percentis dos três critérios. Nenhum é descartado.
+  criterio_principal: combinado
+  combinacao:
+    metodo: media_percentis
+    pesos:
+      pib: 1.0
+      populacao: 1.0
+      vinculos: 1.0
+    observacao: >-
+      Cada critério é convertido em percentile rank dentro do ano-base; o
+      ranking combinado é a média ponderada desses percentis. Pesos iguais são
+      o default declarado e podem ser ajustados sem tocar no código.
+  ano_base:
+    pib: 2023          # último ano de PIB municipal disponível
+    populacao: 2023
+    vinculos: 2023     # último ano com RAIS consolidada
+  # D2: gerar as três opções, não escolher uma. O painel principal usa top_n_principal.
+  top_n: [10, 20, 50]
+  top_n_principal: 20
+  unidade: municipio   # código IBGE de 7 dígitos; RM entra só como corte, D5
+  # D5: o recorte não pode ser só grandes centros ou RMs. Mantemos o ranking de
+  # maiores cidades e acrescentamos cortes complementares, separados, para
+  # municípios pequenos, rurais e periféricos.
+  recortes_complementares:
+    - metropole
+    - periferia_de_metropole
+    - municipio_pequeno
+    - municipio_rural
+  # A definição operacional de "pequeno" e "rural" deve vir de diretório oficial
+  # (IBGE), não de palpite. Enquanto não validada, os cortes saem marcados.
+  exigir_definicao_oficial_estratos: true
+  modo_exploratorio: false   # D1–D3 confirmadas: publicar com ressalvas explícitas
+
+# -----------------------------------------------------------------------------
+# 3. Deflação (D4 — IPCA confirmado em 17/11/2026)
+# -----------------------------------------------------------------------------
+deflator:
+  indice: IPCA               # confirmado: variação mensal, BCB SGS 433
+  fonte: "BCB — SGS"
+  serie: 433                 # IPCA, variação mensal em %
+  periodo_base: ultimo_mes_disponivel  # gravado em saidas/metadados.json
+  # Aplicar só a valores monetários de rendimento. Produto e produtividade
+  # pedem deflator implícito do PIB, não IPCA.
+  aplicar_a:
+    - remuneracao_media
+    - salario_mensal
+
+# -----------------------------------------------------------------------------
+# 4. Fontes e cobertura real de cada série
+# -----------------------------------------------------------------------------
+# `anos` é o que a fonte entrega hoje, não o recorte desejado. O pipeline faz
+# a interseção entre `recorte` e `anos` e registra o que ficou de fora.
+fontes:
+  pib:
+    projeto: basedosdados
+    tabela: br_ibge_pib.municipio
+    anos: [2010, 2023]
+    unidade: BRL               # valores em reais (a staging vem em milhares)
+    abertura_setorial_ate: 2021
+    defasagem_estimada_anos: 2
+    observacao: >-
+      2022–2023 foram divulgados sem abertura do VAB por setor; a abertura
+      volta com a nova série do SCN (ano-base 2021), prevista para 2027.
+
+  populacao:
+    projeto: basedosdados
+    tabela: br_ibge_populacao.municipio
+    anos: [2010, 2025]
+    unidade: habitantes
+    observacao: >-
+      2022 é população residente do Censo 2022; os demais anos são estimativas
+      (a série de estimativas foi interrompida e retomada após o Censo).
+
+  rais:
+    projeto: basedosdados
+    tabela: br_me_rais.microdados_vinculos
+    anos: [2010, 2023]
+    unidade: vinculos
+    filtro_estoque: "vinculo_ativo_3112 = '1'"
+    granulosidade: "ano × município × seção CNAE 2.0"
+    observacao: >-
+      Mede vínculos formais, não pessoas ocupadas. O denominador de
+      produtividade é, portanto, "VAB por vínculo formal".
+
+  caged:
+    projeto: basedosdados
+    tabela: br_me_caged.microdados_movimentacao
+    anos: [2020, 2026]
+    unidade: vinculos
+    observacao: >-
+      Série do Novo CAGED. Não emendar com o CAGED antigo (pré-2020) sem
+      declarar a quebra metodológica.
+
+  comex:
+    # Preferir a Base dos Dados: id_municipio já vem normalizado (7 dígitos) e
+    # os códigos 9300000/9999999 são convertidos em NULL pela própria BD.
+    projeto: basedosdados
+    tabelas:
+      exportacao: br_me_comex_stat.municipio_exportacao
+      importacao: br_me_comex_stat.municipio_importacao
+    anos: [2010, 2024]         # confirmar MAX(ano) na extração
+    unidade: USD_FOB
+    fallback_csv:
+      # Usar só se a BD estiver atrasada. Atenção: o certificado TLS de
+      # balanca.economia.gov.br está EXPIRADO (verificado em 17/11/2026).
+      url_template: "https://balanca.economia.gov.br/balanca/bd/comexstat-bd/mun/{fluxo}_{ano}_MUN.csv"
+      fluxos: [EXP, IMP]
+      separador: ";"
+      encoding: utf-8-sig
+      colunas:
+        CO_ANO: ano
+        CO_MES: mes
+        SH4: id_sh4
+        CO_PAIS: id_pais
+        SG_UF_MUN: sigla_uf
+        CO_MUN: id_municipio
+        KG_LIQUIDO: peso_liquido_kg
+        VL_FOB: valor_fob_dolar
+      tls_verify: false        # só por causa do certificado expirado
+    observacao: >-
+      O município é o do estabelecimento exportador/importador declarante, não
+      a origem física da mercadoria. Isso concentra valores em sedes de
+      tradings e cidades portuárias.
+
+  bndes:
+    projeto: basedosdados
+    tabela: br_bndes_desembolsos.mensal
+    anos: [2010, 2026]
+    unidade: BRL
+    observacao: >-
+      Fora do escopo obrigatório desta sprint. Validado como disponível, para
+      uso no Bloco 3 (investimento).
+
+# -----------------------------------------------------------------------------
+# 5. Regras de validação (viram testes em scripts/validar.py)
+# -----------------------------------------------------------------------------
+validacao:
+  tolerancia_soma_vab: 0.01        # soma dos VAB vs PIB, 1%
+  exigir_id_municipio_7_digitos: true
+  proibir_join_por_nome: true
+  anos_sem_interpolacao: true
+  falhar_se_ano_parcial_consolidado: true
+  min_municipios_cobertura: 0.95   # % dos municípios do ranking com PIB e RAIS
+  # D5: cobertura mínima dos quatro estratos no conjunto de saídas. Não é uma
+  # cota no ranking de maiores cidades — é uma exigência de que o estudo como
+  # um todo cubra pequenos, rurais, periféricos e metrópoles.
+  exigir_todos_estratos_nas_saidas: true
+  estratos_obrigatorios:
+    - metropole
+    - periferia_de_metropole
+    - municipio_pequeno
+    - municipio_rural
+
+# -----------------------------------------------------------------------------
+# 6. Saídas
+# -----------------------------------------------------------------------------
+saidas:
+  brutos: pesquisa/03_dados/brutos
+  tratados: pesquisa/03_dados/tratados
+  publicados: pesquisa/02_saidas
+  painel: pesquisa/02_saidas/painel_cidades.csv
+  ranking: pesquisa/02_saidas/ranking_cidades.csv
+  metadados: pesquisa/02_saidas/metadados.json
+
+# -----------------------------------------------------------------------------
+# 7. Decisões registradas (respostas do usuário em 17/11/2026)
+# -----------------------------------------------------------------------------
+decisoes:
+  D1_criterio: >-
+    PIB e população podem ser abordados em etapas diferentes e também juntos.
+    Os três critérios (pib, populacao, vinculos) mais a combinação convivem no
+    pipeline; nenhum é eliminado.
+  D2_top_n: "gerar as três opções: 10, 20 e 50 cidades"
+  D3_ano_2026: "incluir como ano parcial, sempre marcado"
+  D4_deflator: "IPCA (BCB SGS 433) — sugestão aceita"
+  D5_unidade: >-
+    Municípios pequenos, rurais, periféricos e metrópoles. Unidade principal
+    continua sendo o município; RMs entram apenas como corte complementar.
+# Pendências operacionais que não dependem mais de decisão do usuário:
+pendencias_tecnicas:
+  - "validar definição oficial (IBGE) dos estratos pequeno/rural/periférico"
+  - "confirmar MAX(ano) de comex e o último mês do IPCA na extração"

@@ -1,0 +1,12 @@
+{
+  "id": "wb_desemprego_brasil",
+  "titulo": "Banco Mundial - Desemprego total Brasil (% força de trabalho)",
+  "url": "https://api.worldbank.org/v2/country/BRA/indicator/SL.UEM.TOTL.ZS?format=json&per_page=100",
+  "nivel": "2",
+  "tipo_declarado": "json",
+  "tipo_detectado": "texto",
+  "content_type": "application/json;charset=utf-8",
+  "bytes": 16239,
+  "sha256": "f219da07902c362f306dcb938bb75bc1237ca476b500b96a9a2ccdabd128ae0e",
+  "baixado_em": "2026-11-18T00:05:00+00:00"
+}

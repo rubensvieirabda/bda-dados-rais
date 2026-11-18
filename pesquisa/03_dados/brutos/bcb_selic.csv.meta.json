@@ -1,0 +1,12 @@
+{
+  "id": "bcb_selic",
+  "titulo": "BCB SGS 4390 - Selic acumulada no mês (%)",
+  "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.4390/dados?formato=csv",
+  "nivel": "1",
+  "tipo_declarado": "csv",
+  "tipo_detectado": "texto",
+  "content_type": "text/csv; charset=utf-8",
+  "bytes": 10259,
+  "sha256": "ad82954d61bb27c90141556637d374923d1b7cc5646e9d603b7692db48bd0573",
+  "baixado_em": "2026-11-18T00:05:50+00:00"
+}

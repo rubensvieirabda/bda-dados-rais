@@ -1,0 +1,20 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Python
+__pycache__/
+*.pyc
+
+# Índice do RAG (regerável, pode ficar grande)
+rag_corpus/.indice/
+
+# Metadados de download (regeráveis)
+rag_corpus/**/*.meta.json
+pesquisa/00_protocolo/fontes_status.csv
+
+# Dados locais e saídas geradas pelo script R (não são fonte, são derivados)
+/rais_2022_bh.csv
+/dicionario_rais.csv
+/saidas/

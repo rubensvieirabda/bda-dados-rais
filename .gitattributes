@@ -1,0 +1,12 @@
+# Texto sempre em LF no repositório, independente do sistema operacional.
+* text=auto eol=lf
+
+# Binários: nunca normalizar.
+*.pdf binary
+*.xls binary
+*.xlsx binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.zip binary

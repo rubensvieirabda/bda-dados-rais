@@ -1,0 +1,3 @@
+data_utc,arquivo,tipo,bytes,sha256,valido,url
+2026-11-18T00:06:05+00:00,rag_corpus/dicionarios/RAIS_vinculos_layout2020.xls,xls-ole,1055744,6fe18ceaf8cc3ce6c87046876711a839a00b5293259cd46eaa5ea595f3e10c49,True,
+2026-11-18T00:06:05+00:00,rag_corpus/dicionarios/rais_dicionario.csv,texto-tabular,56569,defaa5a7846aa9deccb679336a8c79bec3771a029340adfc9eaf97b8ceb00d63,True,

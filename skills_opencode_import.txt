@@ -1,0 +1,132 @@
+.opencode/
+└── skills/
+    ├── basedosdados-dicionarios/
+    │   └── SKILL.md
+    ├── historia-emprego-choques-globais/
+    │   └── SKILL.md
+    ├── territorio-produtividade-comercio/
+    │   └── SKILL.md
+    └── rag-harness-defesa/
+        └── SKILL.md
+
+
+
+---
+name: basedosdados-dicionarios
+description: Valida e baixa dicionários oficiais e metadados de colunas da Base dos Dados, IBGE e MTE (PNAD-C, RAIS, CAGED) antes de qualquer consulta ou análise.
+---
+
+## Objetivo
+Garantir que nenhum nome de coluna, código categórico ou unidade de medida seja usado sem estar conferido no dicionário oficial baixado localmente.
+
+## Regras Obrigatórias
+1. **Verificação de Integridade**: Antes de usar qualquer dicionário em `./rag_corpus/dicionarios/`, confirme que o arquivo não é HTML de erro, página de redirecionamento ou versão desatualizada.
+2. **Fontes Primárias de Metadados**:
+   - Base dos Dados (`basedosdados` via Python/CLI ou metadados diretos das tabelas `br_ibge_pnadc`, `br_me_rais`, `br_me_caged`).
+   - Notas técnicas oficiais do IBGE (PNAD Contínua) e do Ministério do Trabalho e Emprego (Novo CAGED / RAIS).
+3. **Diferenciação Metodológica Obrigatória**:
+   - **PNAD Contínua**: pesquisa amostral domiciliar (captura ocupação formal, informal, desocupação e subutilização).
+   - **RAIS**: registro administrativo anual de estoque de vínculos formais em 31/12.
+   - **CAGED / Novo CAGED**: registro administrativo mensal de fluxo (admissões, desligamentos e saldo celetista). Nunca comparar diretamente a série pré-2020 (CAGED antigo) com pós-2020 (Novo CAGED) sem declarar a quebra metodológica.
+
+## Checklist de Saída
+Sempre que responder usando esta skill, entregue:
+- Nome exato da tabela e dataset.
+- Nome original da coluna, tipo de dado, descrição oficial e domínio de códigos.
+- Caminho local do dicionário validado em `./rag_corpus/dicionarios/` e URL oficial de origem.
+
+
+
+---
+name: historia-emprego-choques-globais
+description: Estrutura a análise histórica comparativa do mercado de trabalho brasileiro (2010–2018 vs. 2019–2026) cruzando indicadores de emprego/desemprego com eventos globais e catástrofes comprovadas.
+---
+
+## Objetivo
+Construir uma narrativa rigorosa, cronológica e verificável sobre os maiores e menores índices de emprego no Brasil entre **2010–2018** e **2019–2026**, separando choques externos comprovados de fatores domésticos.
+
+## Métricas Obrigatórias (Não Usar Apenas Taxa de Desocupação)
+- Taxa de desocupação (IBGE/PNAD-C).
+- Taxa composta de subutilização da força de trabalho (desocupados + subocupados por insuficiência de horas + força de trabalho potencial).
+- Nível de ocupação e taxa de participação na força de trabalho.
+- Taxa de informalidade e rendimento médio real habitual.
+- Saldo anual e estoque de empregos formais (CAGED / Novo CAGED e RAIS).
+
+## Matriz de Eventos Globais e Catástrofes
+Para cada evento global ou catástrofe analisada (ex.: crise da dívida europeia, fim do superciclo das commodities, pandemia de COVID-19, gargalos nas cadeias globais de suprimentos, guerra Rússia-Ucrânia, choques climáticos extremos como El Niño/La Niña e desastres de grande escala), classifique obrigatoriamente em 4 colunas:
+1. **Evento / Catástrofe Comprovada** (data, escopo e fonte oficial/internacional).
+2. **Canal de Transmissão Econômica** (comércio exterior, câmbio, juros globais, inflação de energia/alimentos, cadeias produtivas ou choque sanitário/climático).
+3. **Reverberação no Brasil** (`Direta`, `Indireta` ou `Não comprovada / Predominantemente doméstica`).
+4. **Evidência Empírica nos Dados** (indicador, período exato e fonte).
+
+## Regras de Rigor
+- Nunca afirmar causalidade direta sem citar estudo econômico, relatório institucional (Banco Central, IPEA, FMI, Banco Mundial, OIT, CEPAL) ou evidência empírica documentada.
+- Deixar explícita a transição de regimes e quebras metodológicas entre 2010–2018 e 2019–2026.
+
+
+
+---
+name: territorio-produtividade-comercio
+description: Mapeia indicadores de emprego, produtividade, polos de investimento e forças comerciais nas maiores cidades e regiões brasileiras.
+---
+
+## Objetivo
+Cruzar o desempenho do mercado de trabalho com a dinâmica espacial, produtiva e comercial do Brasil nas maiores cidades e regiões econômicas.
+
+## Eixos de Análise
+1. **Recorte Urbano e Regional**:
+   - Identificar o critério explícito de "maiores cidades" (população IBGE, PIB municipal IBGE ou estoque de vínculos formais RAIS) e manter o mesmo critério em toda a comparação.
+   - Analisar capitais, regiões metropolitanas e polos regionais de destaque.
+2. **Investimentos e Produtividade**:
+   - Usar métricas padronizadas: PIB per capita, Valor Adicionado Bruto (VAB) por setor (agropecuária, indústria, serviços), produtividade do trabalho (VAB / pessoal ocupado) e fluxos de investimento anunciados/executados (BNDES, IBGE/PIA, relatórios estaduais e setoriais).
+3. **Forças Comerciais nos Últimos Anos**:
+   - Mapear balança comercial por UF/município (Comex Stat / MDIC), principais pautas exportadoras e importadoras, complexidade econômica e dinâmica do comércio varejista/serviços (PMC e PMS/IBGE).
+
+## Regras de Rigor
+- Sempre declarar o ano-base do PIB municipal ou da RAIS (pois dados municipais oficiais têm defasagem de divulgação em relação aos dados nacionais trimestrais).
+- Evitar rankings sem informar a unidade de medida e o ano de referência.
+
+
+
+---
+name: rag-harness-defesa
+description: Aplica o protocolo RAG e o harness de auditoria de fontes, metodologias e referencial acadêmico para sustentar apresentações e defesas técnicas em tela.
+---
+
+## Objetivo
+Garantir que todo dado, gráfico, afirmação histórica ou argumento apresentado em tela seja 100% auditável, rastreável e respaldado por fontes oficiais, imprensa de referência e literatura científica.
+
+## Arquitetura do Corpus Local (`./rag_corpus/`)
+- `./rag_corpus/dicionarios/`: dicionários de variáveis e layouts oficiais (Base dos Dados, IBGE, MTE).
+- `./rag_corpus/oficiais/`: notas metodológicas, boletins e séries (IBGE, BCB, IPEA, MDIC, OIT, FMI, Banco Mundial).
+- `./rag_corpus/imprensa/`: reportagens datadas e verificadas (CNN Brasil, Valor Econômico, Reuters, Financial Times, Bloomberg) usadas apenas para contextualização factual de eventos.
+- `./rag_corpus/academico/`: artigos revisados por pares, working papers (IPEA, NBER, BCB) e livros de referência com citação completa (Autor, Ano, Título, Periódico/Editora, DOI/URL).
+
+## Regras do Harness de Validação
+1. **Rastreabilidade Total**: Toda afirmação factual ou numérica deve carregar a tag `[Fonte | Ano/Período | Nível de Evidência]`.
+2. **Hierarquia de Evidência**:
+   - **Nível 1 (Dado Primário Oficial)**: IBGE, MTE, BCB, MDIC, Base dos Dados (espelho oficial).
+   - **Nível 2 (Literatura Científica e Organismos Multilaterais)**: Artigos com revisão por pares, IPEA, FMI, Banco Mundial, OIT, CEPAL.
+   - **Nível 3 (Imprensa Especializada)**: CNN Brasil, Reuters, FT, Valor — usada para cronologia de eventos e choques, nunca substituindo dado estatístico oficial.
+3. **Preparação para Defesa em Tela**:
+   - Ao final de cada bloco entregue, gerar um quadro **"Ficha de Defesa"**:
+     - *Pergunta crítica provável da banca/audiência*;
+     - *Resposta objetiva baseada nos dados*;
+     - *Limitação metodológica assumida com transparência*;
+     - *Fonte exata para exibição em tela*.
+
+
+
+{
+  "$schema": "https://opencode.ai",
+  "permission": {
+    "skill": {
+      "basedosdados-dicionarios": "allow",
+      "historia-emprego-choques-globais": "allow",
+      "territorio-produtividade-comercio": "allow",
+      "rag-harness-defesa": "allow"
+    }
+  }
+}
+
+
